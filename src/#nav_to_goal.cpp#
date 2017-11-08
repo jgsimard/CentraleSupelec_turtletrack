@@ -84,6 +84,9 @@ bool moveTo(const geometry_msgs::Pose2D& target_pose_world, geometry_msgs::Twist
 
   double distance = std::sqrt(std::pow(target_pose_base.x,2) + std::pow(target_pose_base.y,2));
   double angle = std::atan2(target_pose_base.y,target_pose_base.x);
+
+  ROS_INFO("ARGC  %i", argc);
+
   
   if(distance > MAX_DIST) {
 
@@ -100,7 +103,7 @@ bool moveTo(const geometry_msgs::Pose2D& target_pose_world, geometry_msgs::Twist
   
   else if (std::abs(target_pose_base.theta) > MAX_ANGL){
       cmd_vel.linear.x = 0.0;
-      cmd_vel.angular.z = target_pose_base.theta;
+      cmd_vel.angular.z = - target_pose_base.theta;
   }
 
   else{

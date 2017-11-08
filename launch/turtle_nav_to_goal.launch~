@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="turtlesim" type="turtlesim_node" name="simnode"/>
+  <node pkg="turtle_tf" type="turtle_tf_broadcaster" name="tfnode" args="turtle1"/> 
+  <node pkg="tl_turtle_track" type="tl_turtle_track_node" name="transpose"/>
+  <node pkg="rviz" type="rviz" name="viz"/>
+</launch>
