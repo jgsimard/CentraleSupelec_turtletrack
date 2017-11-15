@@ -12,6 +12,8 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include "tl_turtle_track/go.h"
+#include "tl_turtle_track/abort.h"
 
 #define BASE_TF "turtle1"
 #define WORLD_TF "world"
@@ -123,27 +125,49 @@ bool moveTo(const geometry_msgs::Pose2D& target_pose_world, geometry_msgs::Twist
   return false;
   
 }
+  
+volatile bool to_process = false;
+
+bool go_callback(tl_turtle_track::go::Request &req, tl_turtle_track::go::Response &res) {
+  ROS_INFO("GO TURTLE!!!");
+  to_process = true;
+  //res.ret = true;
+}
+
+bool abort_callback(tl_turtle_track::abort::Request &req, tl_turtle_track::abort::Response &res) {
+  to_process = false;
+  //res.cool = true;
+}
 
 int main(int argc, char* argv[]) {
 
-  ros::init(argc, argv, "transform_pose2D");  
+  ros::init(argc, argv, "NAV_POSE");
 
-  ros::NodeHandle nh;
-  ros::ServiceServer service = nh.advertiseService("transform_pose2D", transform_callback);
+  // auto go_callback = [&to_process](tl_turtle_track::go::Request &req, tl_turtle_track::go::Response &res) {to_process = true; res.ret = true;};
+  
+  // auto abort_callback = [&to_process](tl_turtle_track::abort::Request &req, tl_turtle_track::abort::Response &res) {to_process = false; res.cool = true;};
 
-  ros::NodeHandle node1;
+  ros::NodeHandle node;
   
-  ros::Publisher pub1 = node1.advertise<geometry_msgs::Twist>("cmd_vel", 1000);
+  ros::Publisher pub1 = node.advertise<geometry_msgs::Twist>("cmd_vel", 1000);
   
-  ros::Publisher pub2 = node1.advertise<geometry_msgs::PoseArray>("poses", 1000);
+  ros::Publisher pub2 = node.advertise<geometry_msgs::PoseArray>("poses", 1000);
   
-  ros::Publisher pub3 = node1.advertise<geometry_msgs::Pose>("curr_pose", 1000);
+  ros::Publisher pub3 = node.advertise<geometry_msgs::Pose>("curr_pose", 1000);
+
+  ros::ServiceServer go = node.advertiseService("go", go_callback);
+  
+  ros::ServiceServer abort = node.advertiseService("abort", abort_callback);
 
   ROS_INFO("Ready to transform poses from %s into %s", WORLD_TF, BASE_TF);
   
   ROS_INFO("ARGC  %i", argc);
   
-  if (argc > 1) {
+  ROS_INFO("command  %s", argv[0]);
+  
+  ROS_INFO("file  %s", argv[1]);
+  
+  if (argc > 0) {
     std::vector<geometry_msgs::Pose> poses;
     std::string x, y, theta;
 
@@ -175,15 +199,19 @@ int main(int argc, char* argv[]) {
 	target_pose.position.z = 0;
 	target_pose.orientation = tf::createQuaternionMsgFromYaw(atof(theta.c_str()));
 	
-	//ROS_INFO("pose %s", target_pose.data.c_str());
 	poses.push_back(target_pose);
       }
 
       pose_array.poses = poses;
-
-      while (pub2.getNumSubscribers() < 1);
-    
+      
+      while (pub2.getNumSubscribers() < 1); // wait for all subscribed nodes to be "connected"
+      
       pub2.publish(pose_array);
+
+      while(!to_process){
+	ROS_INFO("Waiting to start");
+	ros::spinOnce();
+      }
 
       for(geometry_msgs::Pose & target_pose : pose_array.poses) {
 	geometry_msgs::Pose2D target_pose_world;
@@ -201,13 +229,19 @@ int main(int argc, char* argv[]) {
 	  //ROS_INFO("while");
 	  pub1.publish(cmd_vel);
 	  ros::spinOnce();
+
+	  if(!to_process)
+	    break;
 	}
     
 	pub1.publish(cmd_vel);
+
+	if(!to_process)
+	  break;
       }
     }
-  
-    // ros::spin();
   }
+  
+  ros::spin();
   return 0;
 }

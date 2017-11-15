@@ -43,6 +43,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
    FILES
    pose.srv
+   go.srv
+   abort.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -124,10 +126,10 @@ add_executable        (move_cam_node src/move_axis.cpp)
 target_link_libraries (move_cam_node ${catkin_LIBRARIES})
 target_compile_options(move_cam_node PUBLIC --std=c++11)
 
-add_executable        (detect_node src/detect.cpp)
-target_link_libraries (detect_node ${catkin_LIBRARIES})
-target_compile_options(detect_node PUBLIC --std=c++11)
-add_dependencies(detect_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_executable        (detect_node src/detect.cpp)
+# target_link_libraries (detect_node ${catkin_LIBRARIES})
+# target_compile_options(detect_node PUBLIC --std=c++11)
+# add_dependencies(detect_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable         (nav_to_goal src/nav_to_goal.cpp)
 target_link_libraries  (nav_to_goal ${catkin_LIBRARIES})
