@@ -120,19 +120,22 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 
-add_executable        (tl_turtle_track_node src/nav_to_goal.cpp)
-target_link_libraries (tl_turtle_track_node ${catkin_LIBRARIES})
-target_compile_options(tl_turtle_track_node PUBLIC --std=c++11)
-
 add_executable        (move_cam_node src/move_axis.cpp)
 target_link_libraries (move_cam_node ${catkin_LIBRARIES})
 target_compile_options(move_cam_node PUBLIC --std=c++11)
-
 
 add_executable        (detect_node src/detect.cpp)
 target_link_libraries (detect_node ${catkin_LIBRARIES})
 target_compile_options(detect_node PUBLIC --std=c++11)
 add_dependencies(detect_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable         (nav_to_goal src/nav_to_goal.cpp)
+target_link_libraries  (nav_to_goal ${catkin_LIBRARIES})
+target_compile_options (nav_to_goal PUBLIC --std=c++11)
+
+add_executable         (nav_points src/nav_points.cpp)
+target_link_libraries  (nav_points ${catkin_LIBRARIES})
+target_compile_options (nav_points PUBLIC --std=c++11)
 
 #############
 ## Install ##
