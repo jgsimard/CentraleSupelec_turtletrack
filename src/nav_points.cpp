@@ -15,8 +15,11 @@
 #include "tl_turtle_track/go.h"
 #include "tl_turtle_track/abort.h"
 
-#define BASE_TF "turtle1"
-#define WORLD_TF "world"
+#define BASE_TF "base_footprint" //"turtle1"
+#define WORLD_TF "odom"  // "world"
+
+#define MAX_DIST 0.05
+#define MAX_ANGL 0.05
 
 bool transformPose2D(const geometry_msgs::Pose2D& pose_src,
 		     std::string source_frame,
@@ -66,22 +69,6 @@ bool transformPose2D(const geometry_msgs::Pose2D& pose_src,
 
   return true;
 }
-
-
-bool transform_callback(tl_turtle_track::pose::Request& request, tl_turtle_track::pose::Response& response) {
-
-  geometry_msgs::Pose2D goal = request.pose;
-  geometry_msgs::Pose2D target_pose;
-
-  // Let us transform the current goal from the world to the 
-  // base frame
-  transformPose2D(goal, WORLD_TF, response.pose, BASE_TF);
-
-  return true;
-}
-
-#define MAX_DIST 0.05
-#define MAX_ANGL 0.05
 
 bool moveTo(const geometry_msgs::Pose2D& target_pose_world, geometry_msgs::Twist& cmd_vel)
 {
@@ -213,7 +200,7 @@ int main(int argc, char* argv[]) {
 	
 	//ROS_INFO("x = %f ; y = %f ; theta = %f", target_pose_world.x, target_pose_world.y, target_pose_world.theta);
 
-	  //while (pub3.getNumSubscribers() < 1);
+        //while (pub3.getNumSubscribers() < 1);
 	pub3.publish(target_pose);
 	
 	while(!moveTo(target_pose_world,cmd_vel)) {

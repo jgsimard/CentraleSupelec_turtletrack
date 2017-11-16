@@ -14,7 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   message_generation
-)
+  cv_bridge
+  )
+
+find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -105,7 +108,8 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
 # include
-  ${catkin_INCLUDE_DIRS}
+${catkin_INCLUDE_DIRS}
+${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -126,10 +130,11 @@ add_executable        (move_cam_node src/move_axis.cpp)
 target_link_libraries (move_cam_node ${catkin_LIBRARIES})
 target_compile_options(move_cam_node PUBLIC --std=c++11)
 
-# add_executable        (detect_node src/detect.cpp)
-# target_link_libraries (detect_node ${catkin_LIBRARIES})
-# target_compile_options(detect_node PUBLIC --std=c++11)
-# add_dependencies(detect_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ add_executable        (detect_node src/detect.cpp)
+ target_link_libraries (detect_node ${catkin_LIBRARIES})
+ target_link_libraries (detect_node ${OpenCV_LIBRARIES})
+ target_compile_options(detect_node PUBLIC --std=c++11)
+ add_dependencies(detect_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable         (nav_to_goal src/nav_to_goal.cpp)
 target_link_libraries  (nav_to_goal ${catkin_LIBRARIES})

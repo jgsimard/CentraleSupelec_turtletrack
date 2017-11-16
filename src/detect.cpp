@@ -4,6 +4,10 @@
 #include "tl_turtle_track/PanTilts.h"
 #include "pantiltzoom.hpp"
 
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <array>
@@ -45,16 +49,38 @@ void change_zoom(ros::Publisher& pub, float zoom) {
 
 #define TOLERANCE 10
 
-void callback()
+void img_callback(const sensor_msgs::ImageConstPtr& msg,
+		  ros::Publisher &pub,
+		  double &pan, double &tilt, double &zoom)
 {
-  std::array<cv::Scalar,NB_COLORS> colors = {{cv::Scalar(255,0,0),
-					      {0,255,0},
-					      {0,0,255},
-					      {255,255,0}}};
-  cv::Mat hsv;
-  cv::Mat detection; 
-  cv::Mat cleaned; 
-  cv::Mat frame;
+  cv_bridge::CvImageConstPtr bridge_input;
+  try {
+    bridge_input = cv_bridge::toCvShare(msg,sensor_msgs::image_encodings::RGB8);
+  }
+  catch (cv::Exception& e) {
+    std::ostringstream errstr;
+    errstr << "cv_bridge exception caught: " << e.what();
+    return;
+  }
+  
+  const cv::Mat& input  = bridge_input->image;
+  cv::Mat        rgb   (input.rows, input.cols, CV_8UC3);
+
+  unsigned int size           = input.rows * input.cols * 3;
+  unsigned char* begin_input  = (unsigned char*)(input.data);
+  unsigned char* end_input    = (unsigned char*)(input.data) + size;
+  unsigned char* out          = (unsigned char*)(rgb.data);
+  unsigned char* in           = begin_input;
+
+  // Efficient way to process each channel in each pixel,
+  while(in != end_input) *(out++) = 255 - *(in++);
+
+  
+  std::array<cv::Scalar,NB_COLORS> colors = {{cv::Scalar(255,0,0), {0,255,0}, {0,0,255}, {255,255,0}}};
+   
+  cv::Mat hsv,detection, cleaned;
+
+  double u0 = input.rows/2, v0 = input.cols/2;
   
   cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3));
   cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(9,9));
@@ -62,9 +88,9 @@ void callback()
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Vec4i>               hierarchy;
 
-  PanTilts pantilts;
+  tl_turtle_track::PanTilts pantilts;
 
-  cv::cvtColor(frame, hsv, CV_BGR2HSV);       // convert it to HSV
+  cv::cvtColor(rgb, hsv, CV_BGR2HSV);       // convert it to HSV
 
   for(int i = 0; i < NB_COLORS; ++i){
 
@@ -78,25 +104,21 @@ void callback()
     cv::dilate(detection,detection,close_elem); // closing...
     cv::erode (detection,detection,close_elem); // ...
 
-    cv::findContours(detection, 
-		     contours, hierarchy, 
-		     CV_RETR_TREE, 
-		     CV_CHAIN_APPROX_SIMPLE, 
-		     cv::Point(0, 0));
-
+    cv::findContours(detection,contours, hierarchy, 
+		     CV_RETR_TREE,CV_CHAIN_APPROX_SIMPLE,cv::Point(0, 0));
 
     /// Get the moments
-  vector<Moments> mu(contours.size() );
-  for( int i = 0; i < contours.size(); i++ )
-     { mu[i] = moments( contours[i], false ); }
+    std::vector<cv::Moments> mu(contours.size() );
+    for( int i = 0; i < contours.size(); i++ )
+      { mu[i] = moments( contours[i], false ); }
 
-  ///  Get the mass centers:
-  vector<Point2f> mc( contours.size() );
-  for( int i = 0; i < contours.size(); i++ )
-     { mc[i] = Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 ); }
-
-  for( int i = 0; i < contours.size(); i++ )
-    pantilts.push_back(pantiltlzoom());
+    ///  Get the mass centers:
+    std::vector<cv::Point2f> mc( contours.size() );
+    for( int i = 0; i < contours.size(); i++ )
+      mc[i] = cv::Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 );
+    
+    for( int i = 0; i < contours.size(); i++ )
+      auto res = pantiltzoom(mc[i].x, mc[i].y, u0; v0, pan, tilt, zoom); //corriger cette ligne
   }
   
 }
@@ -104,16 +126,20 @@ void callback()
 int main(int argc, char * argv[]) {
   
   ros::init(argc, argv, "axis_move");
-  ros::NodeHandle n1, n2, n3;
-  ros::Publisher pub_pose_bot = n1.advertise<tl_turtle_track::PanTilts>("/pose_bot", 1);
+  ros::NodeHandle nh;
+  ros::Publisher pub_pose_bot = nh.advertise<tl_turtle_track::PanTilts>("/pose_bot", 1);
 
-  double u, v, pan, tilt, zoom;
-
-  auto callback = [&u, &v, &pan, &tilt, &zoom]
+  ros::Subscriber sub_pos = nh.subscribe("/pose_in", 1000, pose_callback);
+  double pan, tilt, zoom;
+  image_transport::ImageTransport it(nh);
+  image_transport::Subscriber sub_img = it.subscribe("/image_in", 1, 
+						     bind(img_callback, _1, std::ref(pub_poe_bot),
+						       std::ref(pan), std::ref(tilt),std::ref(zoom)));
   
-  ros::Subscriber sub_img     = n2.subscibe("img_cam",1000,
-					    
-  ros::Subscriber sub_pos_cam = n3.subscibe("pos_cam",1000; imgCallBack);
+  //auto callback = [&u, &v, &pan, &tilt, &zoom]
+  
+  //ros::Subscriber sub_img = n2.subscibe("img_cam",1000,imgCallBack);					    
+  //ros::Subscriber sub_pos_cam = n3.subscibe("pos_cam",1000; imgCallBack);
 
   /*
   ros::Rate poll_rate(100);
