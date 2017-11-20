@@ -1,0 +1,22 @@
+<launch>
+
+  <node pkg="axis_camera" type="axis.py" name="axis">
+    <param name="~hostname" value="axis3.smart.metz.supelec.fr" />
+    <param name="~username" value="bidon" />
+    <param name="~password" value="bidon" />
+  </node>
+  
+  <node pkg="rqt_image_view" type="rqt_image_view" name="image_view" />
+
+  <node pkg="axis_camera" type="axis_ptz.py" name="axis_ptz">
+    <param name="~hostname" value="axis3.smart.metz.supelec.fr" />
+  </node>
+  
+  <!--<node pkg="rqt_graph" type="rqt_graph" name="graph"/>-->
+  
+  <node pkg="tl_turtle_track" type="detect_node" name="detect" args="" output="screen">
+    <param name="image_transport" value="compressed" />
+    <remap from="image_in" to="/image_raw/compressed" />
+  </node>
+
+</launch>
