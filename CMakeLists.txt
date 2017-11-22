@@ -50,6 +50,7 @@ add_service_files(
    pose.srv
    go.srv
    abort.srv
+   #track_mode.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -131,6 +132,13 @@ ${OpenCV_INCLUDE_DIRS}
 add_executable         (move_cam_node src/move_axis.cpp)
 target_link_libraries  (move_cam_node ${catkin_LIBRARIES})
 target_compile_options (move_cam_node PUBLIC --std=c++11)
+
+
+add_executable         (tracker_node src/tracker.cpp src/pantiltzoom.cpp)
+target_link_libraries  (tracker_node ${catkin_LIBRARIES})
+target_link_libraries  (tracker_node ${OpenCV_LIBRARIES})
+target_compile_options (tracker_node PUBLIC --std=c++11)
+add_dependencies       (tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable         (detect_node src/detect.cpp src/pantiltzoom.cpp)
 target_link_libraries  (detect_node ${catkin_LIBRARIES})

@@ -63,7 +63,6 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
     errstr << "cv_bridge exception caught: " << e.what();
     return;
   }
-  ROS_INFO("super a march");
   
   const cv::Mat& input  = bridge_input->image;
   cv::Mat        rgb   (input.rows, input.cols, CV_8UC3);
@@ -80,11 +79,14 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
 
   //pub.publish(cv_bridge::CvImage(msg->header, "rgb8", output).toImageMsg());
   
-  std::array<cv::Scalar,NB_COLORS> colors = {cv::Scalar(10,0,0), cv::Scalar(165,0,0)};//ORANGE, ROSE
+   std::array<cv::Scalar,NB_COLORS> colors = {
+     //cv::Scalar(10,0,0),
+     cv::Scalar(165,0,0)
+  };//ORANGE, ROSE
    
   cv::Mat hsv, tresh, detection, cleaned;
 
-  double u0 = input.rows/2, v0 = input.cols/2;
+  
   
   cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3));
   cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(9,9));
@@ -117,23 +119,24 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
     
     std::vector<cv::Moments> mu(contours.size());
     std::vector<cv::Point2f> mc(contours.size());
-    
+
+    double v0 = input.rows/2, u0 = input.cols/2;
 
     for( int j = 0; j < contours.size(); j++ ){
       mu[j] = moments( contours[j], false );                             // Get the moments
       mc[j] = cv::Point2f( mu[j].m10/mu[j].m00 , mu[j].m01/mu[j].m00 );  // Get the mass centers
       auto res = pantiltzoom(mc[j].x, mc[j].y, u0, v0, pan, tilt, zoom); // &&corriger cette ligne&&
       tl_turtle_track::PanTilt pantilt;
-      pantilt.pan = res.first;
+      pantilt.pan  = res.first;
       pantilt.tilt = res.second;
       vec_pantilt.push_back(pantilt);
       circle(rgb, mc[j], 20, cv::Scalar(255,0,0));
     }
-    cv::imshow( "hsv", hsv );  // Show our image inside it.
+    // cv::imshow( "hsv", hsv );  // Show our image inside it.
     cv::imshow( "rgb", rgb );  // Show our image inside it.
-    cv::imshow( "detection", detection );  // Show our image inside it.
-    cv::imshow( "tresh", tresh );  // Show our image inside it.
-    cv::waitKey(0);
+    // cv::imshow( "detection", detection );  // Show our image inside it.
+    // cv::imshow( "tresh", tresh );  // Show our image inside it.
+    cv::waitKey(1);
   }
   pantilts.PanTilt_Array = vec_pantilt;
   pub.publish(pantilts);
@@ -156,13 +159,21 @@ int main(int argc, char * argv[]) {
   ros::Publisher pub_pose_bot = nh.advertise<tl_turtle_track::PanTilts>("/pose_bot", 1);
 
   ros::Subscriber sub_pos = nh.subscribe<tl_turtle_track::Axis>
-    ("pose_in", 1000, std::bind(pose_callback, std::placeholders::_1, std::ref(pan), std::ref(tilt),std::ref(zoom)));
+    ("pose_in", 1, std::bind(pose_callback, std::placeholders::_1, std::ref(pan), std::ref(tilt),std::ref(zoom)));
   
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub_img = it.subscribe
     ("image_in", 1, std::bind(img_callback, std::placeholders::_1, std::ref(pub_pose_bot), std::ref(pan), std::ref(tilt),std::ref(zoom)));
 
-  ros::spin();
+  // ros::Rate loop_rate(((double) 1)/4);
+  // int count = 0;
+  // while (ros::ok()) {
+  //   ROS_INFO("%i", count);
+  //   count++;
+  //   ros::spinOnce();
+  //   loop_rate.sleep();
+  // }
+   ros::spin();
 
   
   /*
