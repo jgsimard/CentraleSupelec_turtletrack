@@ -62,7 +62,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-#  std_msgs
+  std_msgs
   geometry_msgs
 )
 
@@ -141,10 +141,12 @@ target_compile_options(move_cam_node PUBLIC --std=c++11)
 add_executable         (nav_to_goal src/nav_to_goal.cpp)
 target_link_libraries  (nav_to_goal ${catkin_LIBRARIES})
 target_compile_options (nav_to_goal PUBLIC --std=c++11)
+add_dependencies       (nav_to_goal ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable         (nav_points src/nav_points.cpp)
 target_link_libraries  (nav_points ${catkin_LIBRARIES})
 target_compile_options (nav_points PUBLIC --std=c++11)
+add_dependencies       (nav_points ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
