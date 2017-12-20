@@ -138,8 +138,17 @@ int main(int argc, char* argv[]) {
   ros::Publisher pub2 = node.advertise<geometry_msgs::PoseArray>("poses", 1000);
   ros::Publisher pub3 = node.advertise<geometry_msgs::Pose>("curr_pose", 1000);
 
-  ros::ServiceServer go = node.advertiseService<tl_turtle_track::go::Request, tl_turtle_track::go::Response>("go", std::bind(go_callback, std::placeholders::_1,std::placeholders::_2,std::ref(to_process)));
-  ros::ServiceServer abort = node.advertiseService<tl_turtle_track::abort::Request, tl_turtle_track::abort::Response>("abort", std::bind(abort_callback, std::placeholders::_1,std::placeholders::_2,std::ref(to_process)));
+  ros::ServiceServer go = node.advertiseService<tl_turtle_track::go::Request, tl_turtle_track::go::Response>
+    ("go", std::bind(go_callback,
+		     std::placeholders::_1,
+		     std::placeholders::_2,
+		     std::ref(to_process)));
+  
+  ros::ServiceServer abort = node.advertiseService<tl_turtle_track::abort::Request, tl_turtle_track::abort::Response>
+    ("abort", std::bind(abort_callback,
+			std::placeholders::_1,
+			std::placeholders::_2,
+			std::ref(to_process)));
 
   ROS_INFO("Ready to transform poses from %s into %s", WORLD_TF, BASE_TF);
   ROS_INFO("ARGC  %i", argc); 

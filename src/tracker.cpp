@@ -3,7 +3,7 @@
 #include "tl_turtle_track/PanTilt.h"
 #include "tl_turtle_track/PanTilts.h"
 #include "pantiltzoom.hpp"
-//#include "tl_turtle_track/track_mode.h"
+#include "tl_turtle_track/mode.h"
 //#include "axis_camera/Axis.h" //"tl_turtle_track/Axis.h"
 
 #include <image_transport/image_transport.h>
@@ -108,7 +108,11 @@ void pose_callback(const tl_turtle_track::Axis::ConstPtr &msg, tl_turtle_track::
 {
   pose = *msg;
 }
-      
+
+bool mode_callback(tl_turtle_track::mode::Request &req, tl_turtle_track::mode::Response &res, std::string &mode)
+{
+   mode = req.mode;
+}
 
 int main(int argc, char * argv[]) {
   
@@ -140,7 +144,14 @@ int main(int argc, char * argv[]) {
 				std::ref(states),
 				std::ref(state)
 				));
- 
+
+  ros::ServiceServer sevice = nh.advertiseService<tl_turtle_track::mode::Request, tl_turtle_track::mode::Response>
+    ("mode", std::bind(mode_callback,
+		       std::placeholders::_1,
+		       std::placeholders::_2,
+		       std::ref(mode)
+		       ));
+  
   ros::Rate loop_rate(((double) 1)/4);
   int count = 0;
   while (ros::ok()) {

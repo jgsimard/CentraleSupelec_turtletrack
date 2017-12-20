@@ -50,7 +50,7 @@ add_service_files(
    pose.srv
    go.srv
    abort.srv
-   #track_mode.srv
+   mode.srv
  )
 
 ## Generate actions in the 'action' folder
