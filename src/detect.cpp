@@ -74,8 +74,8 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
   unsigned char* in           = begin_input;
 
   // Efficient way to process each channel in each pixel,
-  //  while(in != end_input) *(out++) = 255 - *(in++);
-   while(in != end_input) *(out++) = *(in++);
+  // while(in != end_input) *(out++) = 255 - *(in++);
+  while(in != end_input) *(out++) = *(in++);
 
   //pub.publish(cv_bridge::CvImage(msg->header, "rgb8", output).toImageMsg());
   
@@ -88,7 +88,7 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
 
   
   
-  cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3));
+  cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(7,7));
   cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(9,9));
 
   std::vector<std::vector<cv::Point> > contours;
@@ -112,8 +112,6 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
     cv::dilate(detection,detection,close_elem); // closing...
     cv::erode (detection,detection,close_elem); // ...
 
-    
-
     cv::findContours(detection,contours, hierarchy, 
 		     CV_RETR_TREE,CV_CHAIN_APPROX_SIMPLE,cv::Point(0, 0));
     
@@ -132,10 +130,10 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
       vec_pantilt.push_back(pantilt);
       circle(rgb, mc[j], 20, cv::Scalar(255,0,0));
     }
-    // cv::imshow( "hsv", hsv );  // Show our image inside it.
+    cv::imshow( "hsv", hsv );  // Show our image inside it.
     cv::imshow( "rgb", rgb );  // Show our image inside it.
-    // cv::imshow( "detection", detection );  // Show our image inside it.
-    // cv::imshow( "tresh", tresh );  // Show our image inside it.
+    cv::imshow( "detection", detection );  // Show our image inside it.
+    cv::imshow( "tresh", tresh );  // Show our image inside it.
     cv::waitKey(1);
   }
   pantilts.PanTilt_Array = vec_pantilt;
@@ -163,7 +161,13 @@ int main(int argc, char * argv[]) {
   
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub_img = it.subscribe
-    ("image_in", 1, std::bind(img_callback, std::placeholders::_1, std::ref(pub_pose_bot), std::ref(pan), std::ref(tilt),std::ref(zoom)));
+    ("image_in", 1,
+     std::bind(img_callback,
+	       std::placeholders::_1,
+	       std::ref(pub_pose_bot),
+	       std::ref(pan),
+	       std::ref(tilt),
+	       std::ref(zoom)));
 
   // ros::Rate loop_rate(((double) 1)/4);
   // int count = 0;
@@ -174,26 +178,4 @@ int main(int argc, char * argv[]) {
   //   loop_rate.sleep();
   // }
    ros::spin();
-
-  
-  /*
-  ros::Rate poll_rate(100);
-  while(pub.getNumSubscribers() == 0)
-    poll_rate.sleep();
-  std::cout << "I got one connection" << std::endl;
-  std::list<std::pair<double, double> > positions = { {0,0},    {180, 0},
-						      {225, 0}, {135, 0},
-						      {180, 0}, {180, -90},
-						      {180, 10},{180, 0}};
-
-  change_zoom(pub, 0);
-  
-  for(auto& pt : positions) 
-    change_pos(pub, pt.first, pt.second);
-  
-  change_zoom(pub, 100);
-  change_zoom(pub, 1000);
-  change_zoom(pub, 10000);
-  */
-
 }

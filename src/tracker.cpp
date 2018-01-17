@@ -1,10 +1,10 @@
 #include <ros/ros.h>
-#include "tl_turtle_track/Axis.h"
-#include "tl_turtle_track/PanTilt.h"
-#include "tl_turtle_track/PanTilts.h"
+
 #include "pantiltzoom.hpp"
 #include "tl_turtle_track/mode.h"
-//#include "axis_camera/Axis.h" //"tl_turtle_track/Axis.h"
+#include "tl_turtle_track/PanTilts.h"
+//#include "axis_camera/Axis.h"
+#include "tl_turtle_track/Axis.h"
 
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -160,18 +160,5 @@ int main(int argc, char * argv[]) {
     ros::spinOnce();
     loop_rate.sleep();
   }
-  /*
-  double pan, tilt, zoom;
-  ros::NodeHandle nh;
-  ros::Publisher pub_pose_bot = nh.advertise<tl_turtle_track::PanTilts>("/pose_bot", 1);
-
-  ros::Subscriber sub_pos = nh.subscribe<tl_turtle_track::Axis>
-    ("pose_in", 1000, std::bind(pose_callback, std::placeholders::_1, std::ref(pan), std::ref(tilt),std::ref(zoom)));
-  
-  image_transport::ImageTransport it(nh);
-  image_transport::Subscriber sub_img = it.subscribe
-    ("image_in", 1, std::bind(img_callback, std::placeholders::_1, std::ref(pub_pose_bot), std::ref(pan), std::ref(tilt),std::ref(zoom)));
-  */
-  //ros::spin();
 }  
 

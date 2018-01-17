@@ -51,6 +51,7 @@ add_service_files(
    go.srv
    abort.srv
    mode.srv
+   record.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -133,7 +134,6 @@ add_executable         (move_cam_node src/move_axis.cpp)
 target_link_libraries  (move_cam_node ${catkin_LIBRARIES})
 target_compile_options (move_cam_node PUBLIC --std=c++11)
 
-
 add_executable         (tracker_node src/tracker.cpp src/pantiltzoom.cpp)
 target_link_libraries  (tracker_node ${catkin_LIBRARIES})
 target_link_libraries  (tracker_node ${OpenCV_LIBRARIES})
@@ -155,6 +155,11 @@ add_executable         (nav_points src/nav_points.cpp)
 target_link_libraries  (nav_points ${catkin_LIBRARIES})
 target_compile_options (nav_points PUBLIC --std=c++11)
 add_dependencies       (nav_points ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable         (sampler src/sampler.cpp)
+target_link_libraries  (sampler ${catkin_LIBRARIES})
+target_compile_options (sampler PUBLIC --std=c++11)
+add_dependencies       (sampler ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
