@@ -12,6 +12,7 @@
 //cochonerie
 typedef std::pair<double,double> XY;
 typedef double                   Z;
+typedef std::pair<XY,Z> Data;
 
 // x y are stored with 3 nodes...
 int nb_nodes_of(const XY& xy) {
@@ -35,10 +36,11 @@ bool pantilts_callback(const tl_turtle_track::PanTilts::ConstPtr &msg,
 		       ros::Publisher &pub)
 {
   tl_turtle_track::ArenaPosition ap;
-  XY xy = std::make_pair(msg.pan, msg.tilt);
+  XY xy = std::make_pair(msg->PanTilt_Array[0].pan, msg->PanTilt_Array[0].tilt);
   ap.x = svm_pan(xy);
   ap.y = svm_tilt(xy);
-  pub.publish(ar);
+  pub.publish(ap);
+  return true;
 }
 
 int main(int argc, char * argv[]) {
@@ -68,7 +70,5 @@ int main(int argc, char * argv[]) {
 				   ));      
 
       ros::spin();
-      }
     }
- 
 }

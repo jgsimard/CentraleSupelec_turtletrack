@@ -21,6 +21,10 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV REQUIRED)
 
+#pour gaml
+find_package(PkgConfig)
+pkg_check_modules(GAMLLIBSVM gaml-libsvm REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -114,6 +118,7 @@ include_directories(
 # include
 ${catkin_INCLUDE_DIRS}
 ${OpenCV_INCLUDE_DIRS}
+${gaml_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -160,6 +165,16 @@ add_executable         (sampler src/sampler.cpp)
 target_link_libraries  (sampler ${catkin_LIBRARIES})
 target_compile_options (sampler PUBLIC --std=c++11)
 add_dependencies       (sampler ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+#MESSAGE("Link : ${GAMLLIBSVM_LIBRARIES} ; ${catkin_LIBRARIES}")
+
+add_executable            (localize src/localize.cpp)
+#target_link_libraries     (localize ${GAMLLIBSVM_LIBRAIRIES})
+target_link_libraries     (localize ${catkin_LIBRARIES} "-lsvm -lm")
+#target_link_libraries (localize "-lsvm")
+target_include_directories(localize PUBLIC ${GAMLLIBSVM_INCLUDE_DIRS})
+target_compile_options    (localize PUBLIC --std=c++11 ${GAMLLIBSVM_CFLAGS_OTHER})
+add_dependencies          (localize ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
