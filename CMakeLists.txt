@@ -173,6 +173,11 @@ target_link_libraries  (share_node ${catkin_LIBRARIES})
 target_compile_options (share_node PUBLIC --std=c++11)
 add_dependencies       (share_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable         (positions_node src/positions.cpp)
+target_link_libraries  (positions_node ${catkin_LIBRARIES})
+target_compile_options (positions_node PUBLIC --std=c++11)
+add_dependencies       (positions_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 #MESSAGE("Link : ${GAMLLIBSVM_LIBRARIES} ; ${catkin_LIBRARIES}")
 
 add_executable            (localize src/localize.cpp)
