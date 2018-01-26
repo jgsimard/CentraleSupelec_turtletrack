@@ -1,1 +1,5 @@
 *~
+*.bin
+/files/build/CMakeFiles
+*.cmake
+Makefile

@@ -48,7 +48,7 @@ void change_zoom(ros::Publisher& pub, float zoom) {
   ros::Duration(4).sleep();
 }
 
-#define TOLERANCE 5
+#define TOLERANCE 3
 
 void img_callback(const sensor_msgs::ImageConstPtr& msg,
 		  ros::Publisher &pub,
@@ -81,14 +81,14 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
   
    std::array<cv::Scalar,NB_COLORS> colors = {
      //cv::Scalar(10,0,0),
-     cv::Scalar(165,0,0)
+     cv::Scalar(175,0,0)
   };//ORANGE, ROSE
    
   cv::Mat hsv, tresh, detection, cleaned;
 
   
   
-  cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(7,7));
+  cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(5,5));
   cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(9,9));
 
   std::vector<std::vector<cv::Point> > contours;
@@ -130,9 +130,9 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
       vec_pantilt.push_back(pantilt);
       circle(rgb, mc[j], 20, cv::Scalar(255,0,0));
     }
-    cv::imshow( "hsv", hsv );  // Show our image inside it.
+    //cv::imshow( "hsv", hsv );  // Show our image inside it.
     cv::imshow( "rgb", rgb );  // Show our image inside it.
-    cv::imshow( "detection", detection );  // Show our image inside it.
+    //cv::imshow( "detection", detection );  // Show our image inside it.
     cv::imshow( "tresh", tresh );  // Show our image inside it.
     cv::waitKey(1);
   }

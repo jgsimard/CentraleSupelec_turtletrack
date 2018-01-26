@@ -163,10 +163,10 @@ target_link_libraries  (nav_points ${catkin_LIBRARIES})
 target_compile_options (nav_points PUBLIC --std=c++11)
 add_dependencies       (nav_points ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable         (sampler src/sampler.cpp)
-target_link_libraries  (sampler ${catkin_LIBRARIES})
-target_compile_options (sampler PUBLIC --std=c++11)
-add_dependencies       (sampler ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable         (sampler_node src/sampler.cpp)
+target_link_libraries  (sampler_node ${catkin_LIBRARIES})
+target_compile_options (sampler_node PUBLIC --std=c++11)
+add_dependencies       (sampler_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable         (share_node src/share.cpp)
 target_link_libraries  (share_node ${catkin_LIBRARIES})
@@ -180,13 +180,13 @@ add_dependencies       (positions_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${cat
 
 #MESSAGE("Link : ${GAMLLIBSVM_LIBRARIES} ; ${catkin_LIBRARIES}")
 
-add_executable            (localize src/localize.cpp)
+add_executable            (localize_node src/localize.cpp)
 #target_link_libraries     (localize ${GAMLLIBSVM_LIBRAIRIES})
-target_link_libraries     (localize ${catkin_LIBRARIES} "-lsvm -lm")
+target_link_libraries     (localize_node ${catkin_LIBRARIES} "-lsvm -lm")
 #target_link_libraries (localize "-lsvm")
-target_include_directories(localize PUBLIC ${GAMLLIBSVM_INCLUDE_DIRS})
-target_compile_options    (localize PUBLIC --std=c++11 ${GAMLLIBSVM_CFLAGS_OTHER})
-add_dependencies          (localize ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_include_directories(localize_node PUBLIC ${GAMLLIBSVM_INCLUDE_DIRS})
+target_compile_options    (localize_node PUBLIC --std=c++11 ${GAMLLIBSVM_CFLAGS_OTHER})
+add_dependencies          (localize_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

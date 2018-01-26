@@ -6,21 +6,29 @@
 #include "tl_turtle_track/PanTilts.h"
 #include "tl_turtle_track/record.h"
 
-bool pantilts_callback(const tl_turtle_track::PanTilts::ConstPtr &msg, std::vector<tl_turtle_track::PanTilt> &pt)
+bool pantilts_callback(const tl_turtle_track::PanTilts::ConstPtr &msg,
+		       std::vector<tl_turtle_track::PanTilt> &pt)
 {
   pt = msg->PanTilt_Array;
 }
 
-bool record_callback(tl_turtle_track::record::Request &req, tl_turtle_track::record::Response &res, std::vector<tl_turtle_track::PanTilt> &pt, std::ofstream &output_file, float& x, float& y)
+bool record_callback(tl_turtle_track::record::Request &req,
+		     tl_turtle_track::record::Response &res,
+		     std::vector<tl_turtle_track::PanTilt> &pt,
+		     std::ifstream &input_file,
+		     std::ofstream &output_file)
 {
-  output_file << x << ',' << y << ',' << pt.front().pan << ',' << pt.front().tilt << "\n";
+  double x = 0.0, y = 0.0;
+  input_file >> x >> y;
+  res.x = x;
+  res.y = y;
+  output_file << x << ' ' << y << ' ' << pt.front().pan << ' ' << pt.front().tilt << "\n";
 }
 
 int main(int argc, char * argv[]) {
 
   std::string path;
   std::vector<tl_turtle_track::PanTilt> pt;
-  float x = 0.0, y = 0.0;
   
   if (argc > 1)
     {
@@ -44,16 +52,16 @@ int main(int argc, char * argv[]) {
 	("record", std::bind(record_callback, std::placeholders::_1,
 			     std::placeholders::_2,
 			     std::ref(pt),
-			     std::ref(output_file),
-			     std::ref(x),
-			     std::ref(y)
-			     ));
+			     std::ref(input_file),
+			     std::ref(output_file) ));
 
       ros::Rate r(10);
-      if(!input_file.eof()){
-	ros::spinOnce();
-	r.sleep();
+      
+      while(!input_file.eof() && ros::ok()){
+      	ros::spinOnce();
+      	r.sleep();
       }
+      
       input_file.close();
       output_file.close();
     }

@@ -11,7 +11,7 @@
     <param name="~hostname" value="axis3.smart.metz.supelec.fr" />
   </node>
   
-  <!--<node pkg="rqt_graph" type="rqt_graph" name="graph"/>-->
+  <node pkg="rqt_graph" type="rqt_graph" name="graph"/>
   
   <node pkg="tl_turtle_track" type="detect_node" name="detect" args="" output="screen">
     <param name="image_transport" value="compressed" />
@@ -24,11 +24,11 @@
     <remap from="pose_in" to="/state" />
   </node>
 
-  <node pkg="tl_turtle_track" type="sampler" name="sampler" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files">
+  <node pkg="tl_turtle_track" type="sampler_node" name="sampler" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files">
     <remap from="/pantilts_in" to="/pose_bot"/>
   </node>
 
-  <node pkg="tl_turtle_track" type="localize" name="localize" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files">
+  <node pkg="tl_turtle_track" type="localize_node" name="localize" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files"  output="screen" >
     <remap from="/pantilts_in" to="/pose_bot"/>
   </node>
 
