@@ -19,13 +19,13 @@ struct Point {
 
 int main(int argc,char* argv[]) {
 
-  if(argc!=3) {
-    std::cerr << "Usage : " << argv[0] 
-	      << " <hostname> <port> " << std::endl;
+  if(argc < 3) {
+    ROS_ERROR_STREAM("Usage : " << argv[0] 
+		     << " <hostname> <port> " << std::endl);
     return 1;
   }
   
-  ros::init(argc, argv, "share");
+  ros::init(argc, argv, "positions");
   ros::NodeHandle nh;
   unsigned int nb;
   std::vector<tl_turtle_track::ArenaPosition> aps_vec;
@@ -43,11 +43,14 @@ int main(int argc,char* argv[]) {
     ros::Publisher pub_pos_out = nh.advertise<tl_turtle_track::ArenaPositions>("/positions_server", 1);
     
     ros::Rate r(10);
-    if(ros::ok){
+    while(ros::ok()){
 
       socket << "get" << std::endl;
       socket >> nb;
-      while(nb != 0) {
+
+      ROS_INFO_STREAM("nb = " << nb);
+      
+      if(nb != 0) {
 	aps_vec.clear();
 	auto out = std::back_inserter(aps_vec);
 	double x,y;
@@ -56,14 +59,16 @@ int main(int argc,char* argv[]) {
 	  *(out++) = ap;
 	}
       }
+      
       aps.ArenaPosition_Array = aps_vec;
       pub_pos_out.publish(aps);
+      
       ros::spinOnce();
       r.sleep();
     }
   }			    
   catch(std::exception& e) {
-    std::cerr << "Exception caught : " << e.what() << std::endl;
+    ROS_ERROR_STREAM("Exception caught : " << e.what() << std::endl);
   }
 
   return 0;

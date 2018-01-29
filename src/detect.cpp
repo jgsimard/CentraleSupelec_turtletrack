@@ -48,7 +48,7 @@ void change_zoom(ros::Publisher& pub, float zoom) {
   ros::Duration(4).sleep();
 }
 
-#define TOLERANCE 3
+#define TOLERANCE 4
 
 void img_callback(const sensor_msgs::ImageConstPtr& msg,
 		  ros::Publisher &pub,
@@ -89,7 +89,7 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
   
   
   cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(5,5));
-  cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(9,9));
+  cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(11,11));
 
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Vec4i>               hierarchy;
