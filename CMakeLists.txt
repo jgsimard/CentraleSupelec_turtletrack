@@ -17,13 +17,17 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   cv_bridge
   axis_camera
+  pcl_conversions 
+  pcl_ros
   )
 
 find_package(OpenCV REQUIRED)
 
 #pour gaml
 find_package(PkgConfig)
+
 pkg_check_modules(GAMLLIBSVM gaml-libsvm REQUIRED)
+pkg_check_modules(VQ2 vq2 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -46,6 +50,8 @@ pkg_check_modules(GAMLLIBSVM gaml-libsvm REQUIRED)
    ArenaPositions.msg
    PanTilt.msg
    PanTilts.msg
+   Entity.msg
+   Entities.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -187,6 +193,13 @@ target_link_libraries     (localize_node ${catkin_LIBRARIES} "-lsvm -lm")
 target_include_directories(localize_node PUBLIC ${GAMLLIBSVM_INCLUDE_DIRS})
 target_compile_options    (localize_node PUBLIC --std=c++11 ${GAMLLIBSVM_CFLAGS_OTHER})
 add_dependencies          (localize_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable       (gngt src/gngt.cpp)
+target_link_libraries(gngt ${catkin_LIBRARIES})
+set_property         (TARGET gngt APPEND PROPERTY INCLUDE_DIRECTORIES ${VQ2_INCLUDE_DIRS}   )
+set_property         (TARGET gngt APPEND PROPERTY COMPILE_FLAGS       ${VQ2_CFLAGS_OTHER}   )
+set_property         (TARGET gngt APPEND PROPERTY INCLUDE_DIRECTORIES ${catkin_INCLUDE_DIRS})
+set_property         (TARGET gngt APPEND PROPERTY LINK_LIBRARIES      ${VQ2_LIBRARIES}      )
 
 #############
 ## Install ##

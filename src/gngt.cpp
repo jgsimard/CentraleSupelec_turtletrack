@@ -14,6 +14,14 @@
 #include <cstdlib>
 #include <iterator>
 
+#include <limits>
+#include <cmath>
+
+#include "tl_turtle_track/Entity.h"
+#include "tl_turtle_track/Entities.h"
+#include "tl_turtle_track/ArenaPosition.h"
+#include "tl_turtle_track/ArenaPositions.h"
+
 // ###############
 // #             #
 // # GNG-T Stuff #
@@ -200,56 +208,109 @@ public:
 void draw_vertices(ros::Publisher& pub,const Color color, int id, const std::vector<pcl::PointXYZ>& vertices);
 void draw_edges(ros::Publisher& pub, const Color color, int id, const std::vector< std::pair<pcl::PointXYZ,pcl::PointXYZ> >& edges);
 
+
+struct bind_data
+{
+  GNGT             gngt;
+  Params           params;
+  Similarity       distance;
+  UnitSimilarity   unit_distance;
+  Learn            learn;
+  UnitLearn        unit_learn;
+  Evolution        evolution;
+  Colormap         cmap;
+  MarkerIdfs       marker_idfs;
+
+  bind_data() : unit_distance(distance), unit_learn(learn), evolution(params) {}
+
+};
+  
 #define NB_STABILIZATION 5
-void gngt_epoch_cb(ros::Publisher&                         pub,
-		   GNGT&                                   gngt,
-		   Params&                                 params,
-		   UnitSimilarity&                         distance,
-		   UnitLearn&                              learn,
-		   Evolution&                              evolution,
-		   Colormap&                               cmap,
-		   MarkerIdfs&                             marker_idfs,
-		   const sensor_msgs::PointCloud2ConstPtr& input) {
+#define NB_SAMPLES 500
+#define ARENA_MIN 0
+#define ARENA_MAX 10
+#define DIST_MAX 0.5
+void gngt_callback(ros::Publisher&                         pub,
+		   ros::Publisher&                         pub_pc,
+		   ros::Publisher&                         pub_entities,
+		   bind_data&                              bind_struct,
+		   const tl_turtle_track::ArenaPositions::ConstPtr &msg) {
+  
   pcl::PointCloud<pcl::PointXYZ> points;
-  pcl::PCLPointCloud2            points_2;
 
-  // Get the samples
-  pcl_conversions::toPCL (*input,   points_2);
-  pcl::fromPCLPointCloud2(points_2, points  ); 
+  for(const tl_turtle_track::ArenaPosition& ap : msg->ArenaPosition_Array)
+    points.push_back(pcl::PointXYZ(ap.x, ap.y, 0));
+  
+  int nb_pts = msg->ArenaPosition_Array.size();
+  while (nb_pts < NB_SAMPLES){
+    double x = uniform(ARENA_MIN, ARENA_MAX);
+    double y = uniform(ARENA_MIN, ARENA_MAX);
+    for(const tl_turtle_track::ArenaPosition& ap : msg->ArenaPosition_Array){
+      double dist = std::sqrt(std::pow((ap.x-x),2.0) + std::pow((ap.y-y),2.0));
 
+      if(dist < DIST_MAX){
+  	points.push_back(pcl::PointXYZ(x, y, 0));
+  	nb_pts++;
+        break;
+      }
+    }
+  }
+
+  pcl::PCLPointCloud2 data_2;
+  pcl::toPCLPointCloud2 (points, data_2);
+
+  sensor_msgs::PointCloud2 pc_output;
+  pcl_conversions::fromPCL(data_2,pc_output);
+  
+  pc_output.header.stamp    = ros::Time::now();
+  pc_output.header.frame_id = "/map";
+
+  pub_pc.publish(pc_output);
+  
   // Let us use few epochs to stabilize the current graph to the new
   // input (no graph evolution, only adjustment).
+  
   for(int i=0; i< NB_STABILIZATION; ++i) {
     std::random_shuffle(points.begin(), points.end());
-    vq2::algo::gngt::open_epoch(gngt,evolution);
+    vq2::algo::gngt::open_epoch(bind_struct.gngt,bind_struct.evolution);
     for(auto& pt : points) 
-      vq2::algo::gngt::submit(params,gngt,
-			      distance,learn,
-			      pt,false);
-    vq2::algo::gngt::close_epoch(params,gngt,
-				 learn,
-				 evolution,false);
+      vq2::algo::gngt::submit(bind_struct.params,
+    			      bind_struct.gngt,
+    			      bind_struct.unit_distance,
+    			      bind_struct.unit_learn,
+    			      pt,false);
+    
+    vq2::algo::gngt::close_epoch(bind_struct.params,
+    				 bind_struct.gngt,
+    				 bind_struct.unit_learn,
+    				 bind_struct.evolution,
+    				 false);
   }
 
   // Update the graph (add or remove egdes and vertices)
-  vq2::algo::gngt::open_epoch(gngt,evolution);
+  vq2::algo::gngt::open_epoch(bind_struct.gngt,bind_struct.evolution);
   for(auto& pt : points) 
-    vq2::algo::gngt::submit(params,gngt,
-			    distance,learn,
-			    pt,true);
-  vq2::algo::gngt::close_epoch(params,gngt,
-			       learn,
-			       evolution,true);
-
+    vq2::algo::gngt::submit(bind_struct.params,
+  			    bind_struct.gngt,
+  			    bind_struct.unit_distance,
+  			    bind_struct.unit_learn,
+  			    pt,true);
+  
+  vq2::algo::gngt::close_epoch(bind_struct.params,
+  			       bind_struct.gngt,
+  			       bind_struct.unit_learn,
+  			       bind_struct.evolution,
+  			       true);
+  
   
   // Update the connected components and their labels.
   std::map<unsigned int,GNGT::Component*> components;
-  gngt.computeConnectedComponents(components,true);
-  cmap.remap();
-  for(auto& key_val : components) cmap.allocate(key_val.first);
+  bind_struct.gngt.computeConnectedComponents(components,true);
+  bind_struct.cmap.remap();
+  for(auto& key_val : components) bind_struct.cmap.allocate(key_val.first);
 
   // Let us now send the graph to Rviz, component by component.
-  marker_idfs.reset();
+  bind_struct.marker_idfs.reset();
   for(auto& key_val : components) {
     Get get;
     int idf;
@@ -258,11 +319,11 @@ void gngt_epoch_cb(ros::Publisher&                         pub,
     comp_ptr->for_each_vertex(get);
     comp_ptr->for_each_edge(get);
     
-    auto color = cmap(label);
-    idf = 2*label; draw_vertices(pub,color,idf,get.vertices); marker_idfs.use(idf);
-    ++idf;         draw_edges   (pub,color,idf,get.edges);    marker_idfs.use(idf);
+    auto color = bind_struct.cmap(label);
+    idf = 2*label; draw_vertices(pub,color,idf,get.vertices); bind_struct.marker_idfs.use(idf);
+    ++idf;         draw_edges   (pub,color,idf,get.edges);    bind_struct.marker_idfs.use(idf);
   }
-  marker_idfs.cleanup(pub);
+  bind_struct.marker_idfs.cleanup(pub);
 }
 
 
@@ -341,37 +402,30 @@ void draw_edges(ros::Publisher& pub, const Color color, int id, const std::vecto
   pub.publish(marker);
 }
 
+
 int main(int argc, char **argv)
 {
-  GNGT             g;
-  Params           params;
-  Similarity       distance;
-  UnitSimilarity   unit_distance(distance);
-  Learn            learn;
-  UnitLearn        unit_learn(learn);
-  Evolution        evolution(params);
-  Colormap         cmap;
-  MarkerIdfs       marker_idfs;
+  
+  bind_data bind_struct;
 
   std::srand(std::time(0));
 
   ros::init(argc, argv, "gngt");
   ros::NodeHandle n;
 
-  GNGT gngt;
+  ros::Publisher pub_entities = n.advertise<tl_turtle_track::Entities>("/entities_out", 0);
+  
+  ros::Publisher pub_pc = n.advertise<sensor_msgs::PointCloud2> ("/point_cloud", 1);
 
   ros::Publisher  pub = n.advertise<visualization_msgs::Marker>("markers", 0);
-  ros::Subscriber sub = n.subscribe<sensor_msgs::PointCloud2>("input", 1, 
-							      boost::bind(gngt_epoch_cb,
+  ros::Subscriber sub = n.subscribe<tl_turtle_track::ArenaPositions>("input", 1, 
+							      boost::bind(gngt_callback,
 									  boost::ref(pub),
-									  boost::ref(gngt),
-									  boost::ref(params),
-									  boost::ref(unit_distance),
-									  boost::ref(unit_learn),
-									  boost::ref(evolution),
-									  boost::ref(cmap),
-									  boost::ref(marker_idfs),
+									  boost::ref(pub_pc),
+									  boost::ref(pub_entities),
+									  boost::ref(bind_struct),
 									  _1));
+  
   ros::spin();
 
   return 0;

@@ -1,0 +1,46 @@
+<launch>
+ <node pkg="axis_camera" type="axis.py" name="axis">
+    <param name="~hostname" value="axis3.smart.metz.supelec.fr" />
+    <param name="~username" value="bidon" />
+    <param name="~password" value="bidon" />
+  </node>
+  
+<!--  <node pkg="rqt_image_view" type="rqt_image_view" name="image_view" /> -->
+
+  <node pkg="axis_camera" type="axis_ptz.py" name="axis_ptz">
+    <param name="~hostname" value="axis3.smart.metz.supelec.fr" />
+  </node>
+  
+  <node pkg="tl_turtle_track" type="detect_node" name="detect" args="" output="screen">
+    <param name="image_transport" value="compressed" />
+    <remap from="pose_in" to="/state" />
+    <remap from="image_in/compressed" to="/image_raw/compressed" />
+  </node>
+  
+  <node pkg="tl_turtle_track" type="tracker_node" name="track" args="" output="screen">
+    <remap from="/pantilts_in" to="/pose_bot" />
+    <remap from="pose_in" to="/state" />
+  </node>
+
+  <node pkg="tl_turtle_track" type="sampler_node" name="sampler" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files">
+    <remap from="/pantilts_in" to="/pose_bot"/>
+  </node>
+
+  <node pkg="tl_turtle_track" type="localize_node" name="localize" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files"  output="screen" >
+    <remap from="/pantilts_in" to="/pose_bot"/>
+  </node>
+
+   <node pkg="tl_turtle_track" type="share_node" name="share" args="localhost 20000"  output="screen" >
+    <remap from="/positions_in" to="/localize_out"/>
+  </node>
+
+   <node pkg="tl_turtle_track" type="positions_node" name="positions" args="localhost 20000"  output="screen" >
+  </node>
+
+  <node pkg="tl_turtle_track" type="gngt" name="gngt" output="screen" >
+    <remap from="/input" to="/positions_server"/>
+  </node>
+
+  <node pkg="rqt_graph" type="rqt_graph" name="graph"/>
+  
+</launch>

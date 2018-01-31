@@ -13,7 +13,6 @@
 #include <vector>
 #include <array>
 
-#define NB_COLORS 2
 
 void change_pos(ros::Publisher& pub, float hpos, float vpos) {
   tl_turtle_track::Axis pos;
@@ -48,7 +47,7 @@ void change_zoom(ros::Publisher& pub, float zoom) {
   ros::Duration(4).sleep();
 }
 
-#define TOLERANCE 4
+#define TOLERANCE 7
 
 void img_callback(const sensor_msgs::ImageConstPtr& msg,
 		  ros::Publisher &pub,
@@ -78,17 +77,12 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
   while(in != end_input) *(out++) = *(in++);
 
   //pub.publish(cv_bridge::CvImage(msg->header, "rgb8", output).toImageMsg());
-  
-   std::array<cv::Scalar,NB_COLORS> colors = {
-     //cv::Scalar(10,0,0),
-     cv::Scalar(175,0,0)
-  };//ORANGE, ROSE
-   
-  cv::Mat hsv, tresh, detection, cleaned;
 
+  std::list<cv::Scalar> colors = {{ cv::Scalar(170,0,0) }};
   
+  cv::Mat hsv, tresh, detection, cleaned;  
   
-  cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(5,5));
+  cv::Mat open_elem  = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3));
   cv::Mat close_elem = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(11,11));
 
   std::vector<std::vector<cv::Point> > contours;
@@ -102,7 +96,7 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
   for(auto& color : colors){
 
     cv::Scalar hsv_min(color[0] - TOLERANCE, 50, 50);
-    cv::Scalar hsv_max(color[0] + TOLERANCE, 255, 255);
+    cv::Scalar hsv_max(color[0] + TOLERANCE, 200, 200);
 
     cv::inRange(hsv,hsv_min,hsv_max, tresh); // select in-range pixels
 
@@ -135,9 +129,12 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
     //cv::imshow( "detection", detection );  // Show our image inside it.
     cv::imshow( "tresh", tresh );  // Show our image inside it.
     cv::waitKey(1);
+    
+    //ROS_INFO_STREAM("color\n");
   }
   pantilts.PanTilt_Array = vec_pantilt;
   pub.publish(pantilts);
+  //ROS_INFO_STREAM("----------donecolor\n");
 }
 //::ConstPtr& msg
 void pose_callback(const tl_turtle_track::Axis::ConstPtr &msg,

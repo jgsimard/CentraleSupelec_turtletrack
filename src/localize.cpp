@@ -72,9 +72,6 @@ int main(int argc, char * argv[]) {
       
       gaml::libsvm::Predictor<XY,Z> svm_y(nb_nodes_of, fill_nodes);
       svm_y.load_model(path_svm_y);
-
-      XY xy(33,-22);
-      double x = svm_y(xy);
       
       ros::Publisher pub_loc = nh.advertise<tl_turtle_track::ArenaPositions>("/localize_out", 1);
       ros::Subscriber sub_pantilts = nh.subscribe<tl_turtle_track::PanTilts>
