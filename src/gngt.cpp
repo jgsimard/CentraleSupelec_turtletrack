@@ -123,6 +123,7 @@ public:
 // #             #
 // ###############
 
+
 double uniform(double min, double max) {
   return min + (max-min)*(std::rand()/(1.0+RAND_MAX));
 }
@@ -206,7 +207,7 @@ public:
 
 
 void draw_vertices(ros::Publisher& pub,const Color color, int id, const std::vector<pcl::PointXYZ>& vertices);
-void draw_edges(ros::Publisher& pub, const Color color, int id, const std::vector< std::pair<pcl::PointXYZ,pcl::PointXYZ> >& edges);
+void draw_edges   (ros::Publisher& pub,const Color color, int id, const std::vector< std::pair<pcl::PointXYZ,pcl::PointXYZ> >& edges);
 
 
 struct bind_data
@@ -224,7 +225,22 @@ struct bind_data
   bind_data() : unit_distance(distance), unit_learn(learn), evolution(params) {}
 
 };
-  
+
+
+pcl::PointXYZ center_of_mass(std::vector<pcl::PointXYZ>& vertices)
+{
+  double x = 0.0, y = 0.0;
+  int nb = 0;
+  for(const pcl::PointXYZ& pt : vertices){
+    x += pt.x;
+    y += pt.y;
+    nb++;
+  }
+  x /= nb;
+  y /= nb;
+  return pcl::PointXYZ(x,y,0);
+}
+
 #define NB_STABILIZATION 5
 #define NB_SAMPLES 500
 #define ARENA_MIN 0
@@ -309,6 +325,10 @@ void gngt_callback(ros::Publisher&                         pub,
   bind_struct.cmap.remap();
   for(auto& key_val : components) bind_struct.cmap.allocate(key_val.first);
 
+  std::vector<tl_turtle_track::Entity> entities_vec;
+  tl_turtle_track::Entity entity;
+  tl_turtle_track::ArenaPosition ap;
+  
   // Let us now send the graph to Rviz, component by component.
   bind_struct.marker_idfs.reset();
   for(auto& key_val : components) {
@@ -322,7 +342,21 @@ void gngt_callback(ros::Publisher&                         pub,
     auto color = bind_struct.cmap(label);
     idf = 2*label; draw_vertices(pub,color,idf,get.vertices); bind_struct.marker_idfs.use(idf);
     ++idf;         draw_edges   (pub,color,idf,get.edges);    bind_struct.marker_idfs.use(idf);
+
+
+    pcl::PointXYZ com = center_of_mass(get.vertices);
+    //ap.x = com.x;
+    //ap.y = com.y;
+    entity.pos.x = com.x;
+    entity.pos.y = com.y;
+    entity.nb   = label;
+
+    entities_vec.push_back(entity);
+    
   }
+  tl_turtle_track::Entities e;
+  e.array = entities_vec;
+  pub_entities.publish(e);
   bind_struct.marker_idfs.cleanup(pub);
 }
 
