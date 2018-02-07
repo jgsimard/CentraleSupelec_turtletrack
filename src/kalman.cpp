@@ -15,6 +15,8 @@
 
 #include "KalmanFilter.hpp"
 
+#include <geometry_msgs/Twist.h>
+
 #include "tl_turtle_track/Axis.h"
 #include "tl_turtle_track/PanTilt.h"
 #include "tl_turtle_track/PanTilts.h"
@@ -37,7 +39,7 @@
 #include <sys/time.h>
 
 using namespace ekf;
-using namespace ukf;
+//using namespace ukf;
 
 #define SIGMA 10.0
 #define RHO 28.0
@@ -57,85 +59,48 @@ using namespace ukf;
 /*************************************************************************************/
 
 // Evolution function
-void f(gsl_vector * params, gsl_vector * xk_1, gsl_vector * xk)
+void f(gsl_vector * params, gsl_vector * xk_1, gsl_vector * xk, std::pair<double, double>& U)
 {
     double x       = gsl_vector_get(xk_1,0);
     double y       = gsl_vector_get(xk_1,1);
     double theta   = gsl_vector_get(xk_1,2);
-    double x_1     = gsl_vector_get(xk_1,3);
-    double y_1     = gsl_vector_get(xk_1,4);
-    double theta_1 = gsl_vector_get(xk_1,5);
     double dt      = gsl_vector_get(params, 0);
-    double v       = std::sqrt(std::pow(x_1,2) + std::pow(y_1,2)); 
+    
+    double v       = U.first; 
+    double omega   = U.second;
+    
     gsl_vector_set(xk, 0, x     + dt * v * std::cos(theta));
-    gsl_vector_set(xk, 1, y     + dt * v * std::cos(theta));
-    gsl_vector_set(xk, 2, theta + dt * theta_1);
-    gsl_vector_set(xk, 3, x_1);
-    gsl_vector_set(xk, 4, y_1);
-    gsl_vector_set(xk, 5, theta_1);
+    gsl_vector_set(xk, 1, y     + dt * v * std::sin(theta));
+    gsl_vector_set(xk, 2, theta + dt * omega);
+
+    //ROS_INFO_STREAM("v " << v << " omega " << omega);
 }
 
 // Jacobian of the evolution function
-void df(gsl_vector * params, gsl_vector * xk_1, gsl_matrix * Fxk)
+void df(gsl_vector * params, gsl_vector * xk_1, gsl_matrix * Fxk, std::pair<double, double>& U)
 {
     double x       = gsl_vector_get(xk_1,0);
     double y       = gsl_vector_get(xk_1,1);
     double theta   = gsl_vector_get(xk_1,2);
-    double x_1     = gsl_vector_get(xk_1,3);
-    double y_1     = gsl_vector_get(xk_1,4);
-    double theta_1 = gsl_vector_get(xk_1,5);
     double dt      = gsl_vector_get(params, 0);
-    double v       = std::sqrt(std::pow(x_1,2) + std::pow(y_1,2));
-    double f1      = dt * std::cos(theta) / v;
-    double f2      = dt * std::sin(theta) / v;
+    
+    double v       = U.first; 
+    double omega   = U.second;
     
     // Derivatives for x(t+1) = ..
     gsl_matrix_set(Fxk, 0, 0, 1.0);
     gsl_matrix_set(Fxk, 0, 1, 0.0);
     gsl_matrix_set(Fxk, 0, 2, -v*std::sin(theta)*dt);
-    gsl_matrix_set(Fxk, 0, 3, f1);
-    gsl_matrix_set(Fxk, 0, 4, f1);
-    gsl_matrix_set(Fxk, 0, 5, 0.0);
     
     // Derivatives for y(t+1)
     gsl_matrix_set(Fxk, 1, 0, 0.0);
     gsl_matrix_set(Fxk, 1, 1, 1.0);
-    gsl_matrix_set(Fxk, 1, 2, -v*std::cos(theta)*dt);
-    gsl_matrix_set(Fxk, 1, 3, f2);
-    gsl_matrix_set(Fxk, 1, 4, f2);
-    gsl_matrix_set(Fxk, 1, 5, 0.0);
+    gsl_matrix_set(Fxk, 1, 2, v*std::cos(theta)*dt);
     
     // Derivatives for theta(t+1)
     gsl_matrix_set(Fxk, 2, 0, 0.0);
     gsl_matrix_set(Fxk, 2, 1, 0.0);
     gsl_matrix_set(Fxk, 2, 2, 1.0);
-    gsl_matrix_set(Fxk, 2, 3, 0.0);
-    gsl_matrix_set(Fxk, 2, 4, 0.0);
-    gsl_matrix_set(Fxk, 2, 5, dt);
-    
-    // Derivatives for x_1(t+1)
-    gsl_matrix_set(Fxk, 3, 0, 0.0);
-    gsl_matrix_set(Fxk, 3, 1, 0.0);
-    gsl_matrix_set(Fxk, 3, 2, 0.0);
-    gsl_matrix_set(Fxk, 3, 3, 1.0);
-    gsl_matrix_set(Fxk, 3, 4, 0.0);
-    gsl_matrix_set(Fxk, 3, 5, 0.0);
-    
-    // Derivatives for y_1(t+1)
-    gsl_matrix_set(Fxk, 4, 0, 0.0);
-    gsl_matrix_set(Fxk, 4, 1, 0.0);
-    gsl_matrix_set(Fxk, 4, 2, 0.0);
-    gsl_matrix_set(Fxk, 4, 3, 0.0);
-    gsl_matrix_set(Fxk, 4, 4, 1.0);
-    gsl_matrix_set(Fxk, 4, 5, 0.0);
-    
-    // Derivatives for theta_1(t+1)
-    gsl_matrix_set(Fxk, 5, 0, 0.0);
-    gsl_matrix_set(Fxk, 5, 1, 0.0);
-    gsl_matrix_set(Fxk, 5, 2, 0.0);
-    gsl_matrix_set(Fxk, 5, 3, 0.0);
-    gsl_matrix_set(Fxk, 5, 4, 0.0);
-    gsl_matrix_set(Fxk, 5, 5, 1.0);
 }
 
 // Observation function
@@ -178,11 +143,26 @@ void dh(gsl_vector * params, gsl_vector * xk , gsl_matrix * Hyk)
 using turtlebot = std::pair<ekf_param, ekf_state>;
 using map = std::unordered_map<int, turtlebot>;
 
+void cmd_callback(const geometry_msgs::Twist::ConstPtr&              msg,
+		  std::pair<double, double>&                         U
+		  )
+{
+  double x_1 = msg->linear.x;
+  double y_1 = msg->linear.y;
+  double theta_1 = msg->angular.z;
+  
+  double v = std::sqrt(std::pow(x_1,2) + std::pow(y_1,2));
+  
+  U.first = v;
+  U.second = theta_1;
+}
+
 void kalman_callback(const tl_turtle_track::Entities::ConstPtr&              msg,
 		     map&                                                    turtlebots,
 		     ros::Publisher&                                         pub,
 		     gsl_vector*&                                            yi,
-		     std::chrono::high_resolution_clock::time_point&         last_time
+		     std::chrono::high_resolution_clock::time_point&         last_time,
+		     std::pair<double, double>&                              U
 		     )
 {
   auto new_time = std::chrono::high_resolution_clock::now();
@@ -211,7 +191,10 @@ void kalman_callback(const tl_turtle_track::Entities::ConstPtr&              msg
       p.n  = N_X;
       p.no = N_Y;
       
+      //EvolutionNoise * evolution_noise = new ekf::EvolutionAnneal(1e-2, 0.99, 1e-8);
       EvolutionNoise * evolution_noise = new ekf::EvolutionRLS(1e-2, 0.9995);
+      //EvolutionNoise * evolution_noise = new ekf::EvolutionRobbinsMonro(1e-5, 1e-6);
+      
       p.evolution_noise = evolution_noise;
       
       p.observation_noise = 1e-1;
@@ -228,9 +211,6 @@ void kalman_callback(const tl_turtle_track::Entities::ConstPtr&              msg
       
       s.xk->data[0] = entity.pos.x;
       s.xk->data[1] = entity.pos.y;
-      s.xk->data[3] = 0.1;
-      s.xk->data[4] = 0.1;
-      s.xk->data[5] = 0.0;
 
       // END FIX
 
@@ -253,9 +233,24 @@ void kalman_callback(const tl_turtle_track::Entities::ConstPtr&              msg
 
       gsl_vector_set(yi, 0, entity.pos.x);
       gsl_vector_set(yi, 1, entity.pos.y);
-	  
+      
+
+      auto fp = std::bind(f,
+			  std::placeholders::_1,
+			  std::placeholders::_2,
+			  std::placeholders::_3,
+			  std::ref(U)
+			  );
+
+      auto dfp = std::bind(df,
+			   std::placeholders::_1,
+			   std::placeholders::_2,
+			   std::placeholders::_3,
+			   std::ref(U)
+			   );
+      
       // Provide the observation and iterate
-      ekf_iterate(p,s,f,df,h,dh,yi);
+      ekf_iterate(p,s,fp,dfp,h,dh,yi);
 
       tl_turtle_track::State state_out;
       state_out.entity.pos.x = s.xk->data[0];
@@ -304,6 +299,23 @@ int main(int argc, char * argv[]) {
       gsl_vector * xi = gsl_vector_alloc(N_X);
       gsl_vector * yi = gsl_vector_alloc(N_Y);
       gsl_vector_set_zero(yi);
+      
+
+      //      fp = std::bind(f,
+      //	     std::placeholders::_1,
+      //	     std::placeholders::_2,
+      //	     std::placeholders::_3,
+      //	     std::ref(U)
+      //	     ));
+
+      //dfp = std::bind(df,
+      //	     std::placeholders::_1,
+      //	     std::placeholders::_2,
+      //	     std::placeholders::_3,
+      //	     std::ref(U)
+      //	     ));
+
+      std::pair<double, double> U;
 
       auto last_time = std::chrono::high_resolution_clock::now();
 
@@ -315,7 +327,14 @@ int main(int argc, char * argv[]) {
 				std::ref(turtlebots),
 				std::ref(pub),
 				std::ref(yi),
-				std::ref(last_time)
+				std::ref(last_time),
+				std::ref(U)
+				));
+
+      ros::Subscriber sub_cmd = nh.subscribe<geometry_msgs::Twist>
+	("cmd",1,std::bind(cmd_callback,
+				std::placeholders::_1,
+				std::ref(U)
 				));
 
       ros::spin();

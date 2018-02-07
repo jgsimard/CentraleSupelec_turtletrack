@@ -1,0 +1,21 @@
+<launch>
+   <node pkg="turtlesim" type="turtlesim_node" name="simnode"/>
+   
+   <node pkg="turtle_tf" type="turtle_tf_broadcaster" name="tfnode" args="turtle1"/>
+   
+   <node pkg="tl_turtle_track" type="nav_points" name="nav_points" args="/usr/users/promo2018/simard_jea/ros-ws/src/tl_turtle_track/files/poses.txt" output="screen">
+    <remap from="cmd_vel" to="/turtle1/cmd_vel" />
+   </node>
+   
+   <node pkg="tl_turtle_track" type="sim2kalman" name="sim2kalman">
+      <remap from="/pose" to="/turtle1/pose" />
+      <remap from="/entities" to="/entities_out" />
+   </node>
+   
+   <node pkg="rqt_graph" type="rqt_graph" name="rqt"/>
+
+   <node pkg="tl_turtle_track" type="kalman_node" name="kalman" output="screen" >
+      <remap from="/entities" to="/entities_out"/>
+      <remap from="/cmd" to="/turtle1/cmd_vel"/>
+   </node>
+</launch>

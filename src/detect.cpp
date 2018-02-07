@@ -128,7 +128,7 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
     cv::imshow( "rgb", rgb );  // Show our image inside it.
     //cv::imshow( "detection", detection );  // Show our image inside it.
     cv::imshow( "tresh", tresh );  // Show our image inside it.
-    cv::waitKey(1);
+    //cv::waitKey(1);
     
     //ROS_INFO_STREAM("color\n");
   }

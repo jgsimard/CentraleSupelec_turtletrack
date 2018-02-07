@@ -15,8 +15,8 @@
 #include "tl_turtle_track/go.h"
 #include "tl_turtle_track/abort.h"
 
-#define BASE_TF "base_footprint" //"turtle1"
-#define WORLD_TF "odom"  // "world"
+#define BASE_TF "turtle1" //"base_footprint"
+#define WORLD_TF "world"  // "odom"
 
 #define MAX_DIST 0.05
 #define MAX_ANGL 0.05
@@ -84,14 +84,14 @@ bool moveTo(const geometry_msgs::Pose2D& target_pose_world, geometry_msgs::Twist
     if (std::abs(angle) > MAX_ANGL) {
       // ROS_INFO("1 ; dist = %f ; angle = %f ; y = %f", cmd_vel.linear.x, angle, target_pose_base.y);
       //ROS_INFO("1");
-      cmd_vel.linear.x = 0.5*cmd_vel.linear.x;
-      cmd_vel.angular.z = 5*angle;
+      cmd_vel.linear.x = 0.1*cmd_vel.linear.x;
+      cmd_vel.angular.z = 1*angle;
     }
     
     else { //go to destination
       // ROS_INFO("2 ; dist = %f ; x = %f", distance, target_pose_base.x);
       //ROS_INFO("2");
-      cmd_vel.linear.x = 2*target_pose_base.x;
+      cmd_vel.linear.x = 0.4*target_pose_base.x;
       cmd_vel.angular.z = 0.0;
     }
   }
@@ -100,7 +100,7 @@ bool moveTo(const geometry_msgs::Pose2D& target_pose_world, geometry_msgs::Twist
     // ROS_INFO("3 ; dist = %f ; theta = %f", distance, target_pose_base.theta);
     //ROS_INFO("3");
     cmd_vel.linear.x = 0.0;
-    cmd_vel.angular.z = 5*target_pose_base.theta;
+    cmd_vel.angular.z = 1*target_pose_base.theta;
   }
 
   else{
@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
 	target_pose_world.y = target_pose.position.y;  
 	target_pose_world.theta = angles::normalize_angle(tf::getYaw(target_pose.orientation));
 	
-	//ROS_INFO("x = %f ; y = %f ; theta = %f", target_pose_world.x, target_pose_world.y, target_pose_world.theta);
+	ROS_INFO("x = %f ; y = %f ; theta = %f", target_pose_world.x, target_pose_world.y, target_pose_world.theta);
 
         //while (pub3.getNumSubscribers() < 1);
 	pub3.publish(target_pose);

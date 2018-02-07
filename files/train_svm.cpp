@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
     struct svm_parameter params;
     gaml::libsvm::init(params);
     params.kernel_type = RBF;          // RBF kernel
-    params.gamma       = 0.001;           // k(u,v) = exp(-gamma*(u-v)^2)
+    params.gamma       = 1;           // k(u,v) = exp(-gamma*(u-v)^2)
     params.svm_type    = EPSILON_SVR;
     params.p           = .05;          // epsilon
     params.C           = 10;
