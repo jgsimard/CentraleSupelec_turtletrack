@@ -18,6 +18,9 @@
 #define BASE_TF "turtle1" //"base_footprint"
 #define WORLD_TF "world"  // "odom"
 
+//#define BASE_TF "base_footprint"
+//#define WORLD_TF "odom"
+
 #define MAX_DIST 0.05
 #define MAX_ANGL 0.05
 

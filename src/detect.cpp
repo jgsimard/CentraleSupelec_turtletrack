@@ -95,8 +95,8 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
   
   for(auto& color : colors){
 
-    cv::Scalar hsv_min(color[0] - TOLERANCE, 50, 50);
-    cv::Scalar hsv_max(color[0] + TOLERANCE, 200, 200);
+    cv::Scalar hsv_min(color[0] - TOLERANCE, 100, 100);
+    cv::Scalar hsv_max(color[0] + TOLERANCE, 255, 255);
 
     cv::inRange(hsv,hsv_min,hsv_max, tresh); // select in-range pixels
 
@@ -128,7 +128,7 @@ void img_callback(const sensor_msgs::ImageConstPtr& msg,
     cv::imshow( "rgb", rgb );  // Show our image inside it.
     //cv::imshow( "detection", detection );  // Show our image inside it.
     cv::imshow( "tresh", tresh );  // Show our image inside it.
-    //cv::waitKey(1);
+    cv::waitKey(1);
     
     //ROS_INFO_STREAM("color\n");
   }
